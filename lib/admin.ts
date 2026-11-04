@@ -1,9 +1,17 @@
 import {getChatGPTUser} from '../app/chatgpt-auth';
 import {getDb} from '../db';
-import {users} from '../db/schema';
+import {cookies} from 'next/headers';
+import {tokenHash} from './password';
+import {sessions,users} from '../db/schema';
 import {eq, and, isNull} from 'drizzle-orm';
 
 export async function getAppUser(){
+ const token=(await cookies()).get('practice_session')?.value;
+ if(token){
+  const db=getDb();
+  const [session]=await db.select().from(sessions).where(eq(sessions.id,await tokenHash(token)));
+  if(session&&session.expiresAt>new Date().toISOString()){const [user]=await db.select().from(users).where(eq(users.id,session.userId));if(user)return user;}
+ }
  const identity=await getChatGPTUser();
  if(!identity)return null;
  const db=getDb();
