@@ -4,8 +4,10 @@ import {Copy,useCopy} from './copy';
 import {WhatsAppIcon} from './social';
 import {useEffect,useId,useRef,useState,useSyncExternalStore} from 'react';
 import Link from 'next/link';
-import {Mail,CalendarDays,CheckCircle2,Tag,ArrowRight,ArrowUpRight,Sparkles,MessagesSquare as Chat,Sprout,Home as HomeIcon,Phone,Plus,Quote,MapPin,ChevronLeft,ChevronRight,Star,MessagesSquare} from 'lucide-react';
+import {Mail,CalendarDays,CheckCircle2,Tag,ArrowRight,ArrowUpRight,Sparkles,MessagesSquare as Chat,Sprout,Home as HomeIcon,Phone,Plus,Quote,ChevronLeft,ChevronRight,Star,MessagesSquare} from 'lucide-react';
 import {slugify} from '../../lib/site-content';
+import type {Review,ReviewPage} from '../../lib/review-types';
+import {bookingWhatsAppLink,type BookingWhatsAppDetails} from '../../lib/booking-whatsapp';
 import {useContent,img,serviceImages,firstName,waLink,linkProps,firstWhatsapp} from './content';
 
 export function Eyebrow({children,left=false}:{children:React.ReactNode;left?:boolean}){return <span className={'s-eyebrow'+(left?' left':'')}>{children}</span>;}
@@ -76,11 +78,25 @@ export function ContactDetails(){const t=useCopy();
 }
 
 export function BookingForm({session,onSession}:{session?:string;onSession?:(s:string)=>void}){const t=useCopy();
- const c=useContent();
+ const c=useContent(),wa=firstWhatsapp(c);
+ const [whatsappUrl,setWhatsappUrl]=useState('');
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[ok,setOk]=useState(false),[notes,setNotes]=useState('');
  const successDialog=useRef<HTMLDialogElement>(null),successId=useId();
  useEffect(()=>{if(ok&&!successDialog.current?.open)successDialog.current?.showModal();},[ok]);
- async function book(e:React.FormEvent<HTMLFormElement>){e.preventDefault();if(busy)return;setBusy(true);setMessage('');setOk(false);const f=e.currentTarget;const data=Object.fromEntries(new FormData(f));try{const r=await fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone})});const d=await r.json() as {error?:string};if(!r.ok)throw Error(d.error);setOk(true);setMessage(t('Thank you. Your request has been received. {name} will contact you to confirm your session.').replace('{name}',firstName(c.name)));f.reset();setNotes('');onSession?.('');}catch(e){setMessage(e instanceof Error&&e.message?e.message:t('Please try again.'));}finally{setBusy(false);}}
+ async function book(e:React.FormEvent<HTMLFormElement>){
+  e.preventDefault();if(busy)return;
+  setBusy(true);setMessage('');setOk(false);setWhatsappUrl('');
+  const form=e.currentTarget;
+  const data={...Object.fromEntries(new FormData(form)),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone} as BookingWhatsAppDetails;
+  try{
+   const response=await fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+   const result=await response.json().catch(()=>null) as {ok?:boolean;error?:string}|null;
+   if(!response.ok||!result?.ok)throw Error(result?.error||t('Please try again.'));
+   setWhatsappUrl(wa?bookingWhatsAppLink(wa.number,data):'');
+   setOk(true);setMessage(t('Thank you. Your request has been received. {name} will contact you to confirm your session.').replace('{name}',firstName(c.name)));
+   form.reset();setNotes('');onSession?.('');
+  }catch(error){setMessage(error instanceof Error&&error.message?error.message:t('Please try again.'));}finally{setBusy(false);}
+ }
  return <><form id="book-form" className="s-form" onSubmit={book}>
   <h3><Copy text="Book an Appointment"/></h3><p><Copy text="Fill in the form below and I’ll get back to you to confirm your session."/></p>
   <div className="s-row"><label><Copy text="Full Name *"/><input name="name" required maxLength={120} placeholder={t("Your name")} autoComplete="name"/></label><label><Copy text="Email Address *"/><input type="email" name="email" required maxLength={254} placeholder={t("your@email.com")} autoComplete="email"/></label></div>
@@ -89,16 +105,17 @@ export function BookingForm({session,onSession}:{session?:string;onSession?:(s:s
   <label className="s-notes"><Copy text="Message / Additional Notes"/> <span><Copy text="(optional)"/></span><textarea name="message" rows={4} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} placeholder={t("Any specific concerns or requests you’d like to share…")}/><small><span><Copy text="Please avoid sensitive personal or medical details — these can be discussed privately in your session."/></span><span aria-live="polite">{notes.length}/1000</span></small></label>
   <label className="s-consent"><input type="checkbox" required/> <Copy text="I agree to be contacted about my appointment request and understand my details will be stored for this purpose."/></label>
   <button className="s-btn lg block" disabled={busy}><CalendarDays size={18}/> {busy?t('Sending…'):t('Submit Booking Request')}</button>
-  <small className="s-note"><Copy text="This is a request, not a confirmed booking. Dates depend on availability."/></small>
+  <small className="s-note"><Copy text="This is a request, not a confirmed booking. Dates depend on availability."/>{wa&&<span className="s-booking-whatsapp-hint"><WhatsAppIcon size={13}/><Copy text="After submitting, you can also share your request on WhatsApp."/></span>}</small>
   {!ok&&<p role="status" className="s-status err">{message}</p>}
  </form>
- <dialog ref={successDialog} className="s-booking-success" aria-labelledby={successId+'-title'} aria-describedby={successId+'-message'} onClose={()=>{setOk(false);setMessage('');}}>
+ <dialog ref={successDialog} className="s-booking-success" aria-labelledby={successId+'-title'} aria-describedby={successId+'-message'} onClose={()=>{setOk(false);setMessage('');setWhatsappUrl('');}}>
   <div className="s-booking-success-icon"><CheckCircle2 size={34} strokeWidth={1.5}/></div>
   <span className="s-booking-success-kicker"><Copy text="THANK YOU FOR REACHING OUT"/></span>
   <h2 id={successId+'-title'}><Copy text="Request received"/></h2>
   <p id={successId+'-message'}>{message}</p>
   <div className="s-booking-success-note"><CalendarDays size={17}/><span><Copy text="Your session will be confirmed after we contact you."/></span></div>
-  <button type="button" className="s-btn lg block" autoFocus onClick={()=>successDialog.current?.close()}><Copy text="Done"/></button>
+  {whatsappUrl&&<div className="s-booking-whatsapp"><a className="s-btn lg block" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={19}/><Copy text="Send booking on WhatsApp"/></a><p><Copy text="Review your booking details in WhatsApp, then tap Send."/></p></div>}
+  <button type="button" className={'s-btn lg block'+(whatsappUrl?' s-booking-done':'')} autoFocus onClick={()=>successDialog.current?.close()}><Copy text="Done"/></button>
  </dialog></>;
 }
 
@@ -115,31 +132,41 @@ function useMedia(query:string){
 }
 
 export function Testimonials(){const t=useCopy();
- const c=useContent(),testimonials=c.testimonials.filter(x=>x.quote.trim());
+ const [testimonials,setTestimonials]=useState<Review[]>([]),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false);
+ useEffect(()=>{
+  const controller=new AbortController();
+  fetch('/api/reviews?sort=recent',{signal:controller.signal,cache:'no-store'})
+   .then(async response=>{if(!response.ok)throw Error('Reviews unavailable');return await response.json() as ReviewPage;})
+   .then(result=>{if(!controller.signal.aborted){setTestimonials(result.reviews);setFailed(false);}})
+   .catch(()=>{if(!controller.signal.aborted)setFailed(true);})
+   .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+  return ()=>controller.abort();
+ },[]);
  const perView=useMedia('(max-width: 768px)')?1:2,reduced=useMedia('(prefers-reduced-motion: reduce)');
  const [index,setIndex]=useState(0),[hover,setHover]=useState(false),[focus,setFocus]=useState(false);
  const startX=useRef<number|null>(null);
  const n=testimonials.length,pages=Math.max(1,n-perView+1),idx=index%pages,auto=!reduced&&pages>1,paused=hover||focus;
  useEffect(()=>{if(!auto||paused)return;const id=setInterval(()=>{if(!document.hidden)setIndex(i=>(i+1)%pages);},AUTOPLAY_MS);return()=>clearInterval(id);},[auto,paused,pages,idx]);
- if(!n)return null;
  const go=(d:number)=>setIndex((idx+d+pages)%pages);
  return <section className="s-testimonials s-sec"><div className="s-wrap">
-  <div className="s-head"><span className="s-tag"><Copy text="Testimonials"/></span><h2><Copy text="Changing People’s Lives"/></h2></div>
-  <div className="s-carousel" role="region" aria-roledescription="carousel" aria-label={t("Client testimonials")}
+  <div className="s-head"><span className="s-tag"><Copy text="Testimonials"/></span><h2><Copy text="Reflections from our clients"/></h2></div>
+  {n>0?<div className="s-carousel" role="region" aria-roledescription="carousel" aria-label={t("Client testimonials")}
    onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onFocus={()=>setFocus(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setFocus(false);}}
    onPointerDown={e=>{startX.current=e.clientX;}} onPointerUp={e=>{if(startX.current===null)return;const dx=e.clientX-startX.current;startX.current=null;if(Math.abs(dx)>50&&pages>1)go(dx<0?1:-1);}}>
    {pages>1&&<button className="s-tnav prev" onClick={()=>go(-1)} aria-label={t("Previous testimonial")}><ChevronLeft/></button>}
    <div className="s-tviewport"><div className={'s-ttrack'+(pages===1?' center':'')} style={{transform:`translateX(-${idx*100/perView}%)`}} aria-live={auto&&!paused?'off':'polite'}>
-    {testimonials.map((x,i)=>{const visible=i>=idx&&i<idx+perView;return <div key={i} className={'s-tslide'+(visible?' on':'')} style={{flex:`0 0 ${100/perView}%`}} aria-hidden={!visible} role="group" aria-roledescription="slide" aria-label={`${i+1} of ${n}`}>
-     <figure className="s-tcard spot"><Quote size={30}/><blockquote>{x.quote}</blockquote><figcaption><span className="s-avatar" aria-hidden>{(x.name||'A').trim()[0].toUpperCase()}</span><div><b>{x.name||'Anonymous'}</b>{x.location&&<small><MapPin size={12}/> {x.location}</small>}</div><span className="s-stars" aria-label={t("5 stars")}>{[0,1,2,3,4].map(k=><Star key={k} size={14} fill="currentColor"/>)}</span></figcaption></figure>
+    {testimonials.map((x,i)=>{const visible=i>=idx&&i<idx+perView;return <div key={x.id} className={'s-tslide'+(visible?' on':'')} style={{flex:`0 0 ${100/perView}%`}} aria-hidden={!visible} role="group" aria-roledescription="slide" aria-label={`${i+1} of ${n}`}>
+     <figure className="s-tcard spot"><Quote size={30}/><blockquote>{x.body}</blockquote><figcaption><span className="s-avatar" aria-hidden>{(x.displayName||'A').trim()[0].toUpperCase()}</span><div><b>{x.displayName||'Anonymous'}</b><small className="s-tservice">{x.service}</small></div><span className="s-stars" role="img" aria-label={`${x.rating} out of 5 stars`}>{[1,2,3,4,5].map(k=><Star key={k} size={14} fill={k<=x.rating?'currentColor':'none'}/>)}</span></figcaption></figure>
     </div>;})}
    </div></div>
    {pages>1&&<button className="s-tnav next" onClick={()=>go(1)} aria-label={t("Next testimonial")}><ChevronRight/></button>}
   </div>
+  :<p className="s-testimonial-status" role="status">{loading?'Loading client reflections…':failed?'Client reviews are temporarily unavailable.':'There are no published reviews yet. You’re welcome to share your experience.'}</p>}
   {pages>1&&<div className="s-tcontrols">
    <div className="s-dots">{Array.from({length:pages},(_,i)=><button key={i} className={i===idx?'on':''} onClick={()=>setIndex(i)} aria-label={`Show testimonial ${i+1}`} aria-current={i===idx}/>)}</div>
    {auto&&<div className="s-tprogress" aria-hidden><span key={idx+(paused?"p":"r")} style={{animationDuration:AUTOPLAY_MS+'ms',animationPlayState:paused?'paused':'running'}}/></div>}
   </div>}
+  <div className="s-testimonials-link"><Link className="s-btn light" href="/reviews">{n?'Read all reviews':'Read & share reviews'}<ArrowUpRight size={16}/></Link></div>
  </div></section>;
 }
 

@@ -37,6 +37,8 @@ jobs:
         run: node -e 'require("node:fs").appendFileSync(process.env.GITHUB_ENV,"ADMIN_PASSWORD="+require("node:crypto").randomBytes(32).toString("hex")+"\n")'
       - run: npm run typecheck
       - run: npm run lint
+      - run: node scripts/reveal-smoke.mjs
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
+      - run: npm run test:login-errors
       - run: npm run test:production

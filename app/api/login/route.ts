@@ -5,6 +5,7 @@ import {users,sessions,loginAttempts} from '../../../db/schema';
 import {eq,sql} from 'drizzle-orm';
 import {DUMMY_PASSWORD_HASH,verifyPassword,tokenHash} from '../../../lib/password';
 export async function POST(request:Request){
+ try{
  if(!isSameOrigin(request))return Response.json({error:'Invalid request.'},{status:403});
  const data=await request.json().catch(()=>null) as {email?:unknown;password?:unknown}|null;
  if(typeof data?.email!=='string'||typeof data?.password!=='string'||data.email.length>254||data.password.length>256)return Response.json({error:'Enter your email and password.'},{status:400});
@@ -19,4 +20,17 @@ export async function POST(request:Request){
  await db.insert(sessions).values({id:await tokenHash(token),userId:user.id,expiresAt:new Date(Date.now()+28800000).toISOString()});
  await db.delete(loginAttempts).where(eq(loginAttempts.email,email));
  return Response.json({ok:true},{headers:{'Cache-Control':'no-store','Set-Cookie':sessionCookie(request,token,28800)}});
+ }catch(error){
+  const reference=crypto.randomUUID();
+  // Log error codes only: SQL errors and invalid URLs can contain credentials or personal data.
+  let cause:unknown=error,code='UNKNOWN';
+  for(let i=0;i<6&&cause&&typeof cause==='object';i++){
+   const detail=cause as {code?:unknown;name?:unknown;cause?:unknown};
+   if(typeof detail.code==='string')code=detail.code;
+   else if(code==='UNKNOWN'&&typeof detail.name==='string')code=detail.name;
+   cause=detail.cause;
+  }
+  console.error('[login] Sign-in failed',{reference,code});
+  return Response.json({error:'Sign-in is temporarily unavailable. Please try again later or contact the practice administrator.',reference},{status:503,headers:{'Cache-Control':'no-store'}});
+ }
 }

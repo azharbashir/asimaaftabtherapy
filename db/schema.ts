@@ -7,3 +7,9 @@ export const images=mysqlTable('images',{id:id(),mime:varchar('mime',{length:80}
 export const users=mysqlTable('users',{id:id(),authId:varchar('auth_id',{length:254}).unique(),passwordHash:varchar('password_hash',{length:255}),name:varchar('name',{length:120}).notNull(),email:varchar('email',{length:254}).notNull().unique(),role:varchar('role',{length:20,enum:['admin','manager','user']}).notNull().default('user'),createdAt:timestamp('created_at')});
 export const sessions=mysqlTable('sessions',{id:id(),userId:varchar('user_id',{length:64}).notNull().references(()=>users.id,{onDelete:'cascade'}),expiresAt:timestamp('expires_at')},table=>[index('sessions_user_id_idx').on(table.userId)]);
 export const loginAttempts=mysqlTable('login_attempts',{email:varchar('email',{length:254}).primaryKey(),count:int('count').notNull(),resetAt:timestamp('reset_at')});
+export const reviews=mysqlTable('reviews',{
+ id:id(),service:varchar('service',{length:200}).notNull(),rating:int('rating').notNull(),
+ displayName:varchar('display_name',{length:80}).notNull().default('Anonymous'),body:text('body').notNull(),
+ status:varchar('status',{length:20,enum:['pending','approved','rejected']}).notNull().default('pending'),
+ createdAt:timestamp('created_at'),
+},table=>[index('reviews_status_service_idx').on(table.status,table.service),index('reviews_created_at_idx').on(table.createdAt)]);

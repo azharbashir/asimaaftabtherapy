@@ -46,6 +46,46 @@ try{
  const dashboard=await request('/admin',{cookie:manager});assert.equal(dashboard.status,200);assert(dashboard.data.includes('New Appointment'));
  assert.equal((await request('/api/users',{cookie:manager})).status,403);
  assert.equal((await request('/api/content',{method:'PUT',cookie:manager,data:{}})).status,403);
+ // Service reviews: approval, privacy, validation, filtering, summaries and pagination.
+ assert.equal((await request('/reviews')).status,200);
+ assert.equal((await request('/api/admin/reviews')).status,403);
+ assert.equal((await request('/api/admin/reviews',{cookie:manager})).status,403);
+ assert.equal((await request('/api/reviews')).data.total,0);
+ const siteForReviews=(await request('/api/content')).data;
+ const reviewInput={service:siteForReviews.services[0].title,rating:5,displayName:'',body:'A thoughtful space to speak at my own pace.',consent:true};
+ assert.equal((await request('/api/reviews',{method:'POST',origin:'https://untrusted.example',data:reviewInput})).status,403);
+ for(const invalid of [{...reviewInput,consent:false},{...reviewInput,rating:6},{...reviewInput,body:'short'},{...reviewInput,service:'Unknown service'},{...reviewInput,website:'spam.example'}])assert.equal((await request('/api/reviews',{method:'POST',data:invalid})).status,400);
+ const reviewIds=[];
+ for(const [index,rating] of [5,4,3,5,2,1,4,5].entries()){
+  const body=`Review lifecycle check ${index}: a thoughtful space to speak.`;
+  assert.equal((await request('/api/reviews',{method:'POST',data:{...reviewInput,service:siteForReviews.services[index%2].title,rating,body,status:'approved'}})).status,201);
+  const submitted=(await request('/api/admin/reviews',{cookie:admin})).data.find(review=>review.body===body);
+  assert.equal(submitted.status,'pending');assert.equal(submitted.displayName,'Anonymous');
+  reviewIds.push(submitted.id);
+  assert.equal((await request('/api/admin/reviews',{method:'PATCH',cookie:manager,data:{id:submitted.id,status:'approved'}})).status,403);
+  assert.equal((await request('/api/admin/reviews',{method:'DELETE',cookie:manager,data:{id:submitted.id}})).status,403);
+  assert.equal((await request('/api/reviews')).data.total,index,'pending reviews must stay private');
+  assert.equal((await request('/api/admin/reviews',{method:'PATCH',cookie:admin,data:{id:submitted.id,status:'approved'}})).status,200);
+ }
+ const publicReviews=(await request('/api/reviews')).data;
+ assert.equal(publicReviews.total,8);assert.equal(publicReviews.reviews.length,6);assert.equal(publicReviews.summary.average,29/8);assert.deepEqual(publicReviews.summary.distribution,[1,1,1,2,3]);
+ assert(!('status' in publicReviews.reviews[0]));
+ assert.equal((await request('/api/reviews?page=2')).data.reviews.length,2);
+ assert.equal((await request('/api/reviews?page=999')).data.page,2);
+ assert.equal((await request('/api/reviews?sort=highest')).data.reviews[0].rating,5);
+ assert.equal((await request('/api/reviews?sort=lowest')).data.reviews[0].rating,1);
+ assert.equal((await request('/api/reviews?rating=5')).data.total,3);
+ const selectedService=(await request('/api/reviews?service='+encodeURIComponent(reviewInput.service)+'&rating=5')).data;
+ assert.equal(selectedService.total,1);assert.equal(selectedService.summary.total,4);assert.equal(selectedService.summary.average,3.5);
+ assert.equal((await request('/api/reviews?rating=6')).status,400);
+ assert.equal((await request('/api/reviews?sort=invalid')).status,400);
+ assert.equal((await request('/api/admin/reviews',{method:'PATCH',cookie:admin,origin:'https://untrusted.example',data:{id:reviewIds[0],status:'approved'}})).status,403);
+ assert.equal((await request('/api/admin/reviews',{method:'PATCH',cookie:admin,data:{id:reviewIds[0],status:'rejected'}})).status,200);
+ assert.equal((await request('/api/reviews')).data.total,7);
+ assert.equal((await request('/api/admin/reviews',{method:'PATCH',cookie:admin,data:{id:reviewIds[0],status:'pending'}})).status,200);
+ assert.equal((await request('/api/reviews')).data.total,7);
+ assert.equal((await request('/api/admin/reviews',{method:'DELETE',cookie:admin,data:{id:reviewIds[0]}})).status,200);
+ assert.equal((await request('/api/admin/reviews',{method:'DELETE',cookie:admin,data:{id:reviewIds[0]}})).status,404);
  const booking={name:'Production check',email:'booking@example.com',phone:'+1234567890',sessionType:'Online',service:'Test service',date:new Date(Date.now()+3*86400000).toISOString().slice(0,10),timezone:'Asia/Bahrain',message:'Test request'};
  assert.equal((await request('/api/appointments',{method:'POST',data:booking})).status,201);
  const list=await request('/api/appointments',{cookie:manager});assert.equal(list.status,200);const id=list.data[0].id;
@@ -99,7 +139,7 @@ try{
  assert.equal((await request('/api/users',{cookie:active})).status,403);
  assert.equal((await request('/api/login',{method:'POST',data:{email:'admin@example.com',password}})).status,401);
  await login('admin@example.com',newPassword);
- console.log('Production smoke checks passed: fresh migrations, bootstrap, login, role permissions, booking lifecycle, content/image persistence, repeat initialization, SQLite import, password reset, logout and header-spoof protection.');
+ console.log('Production smoke checks passed: fresh migrations, bootstrap, login, role permissions, booking lifecycle, content/image persistence, service reviews and moderation, repeat initialization, SQLite import, password reset, logout and header-spoof protection.');
 }finally{
  if(server&&server.exitCode===null){server.kill('SIGTERM');await once(server,'exit');}
  await control.query(`DROP DATABASE IF EXISTS \`${testDatabase}\``);

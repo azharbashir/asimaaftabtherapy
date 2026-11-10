@@ -18,7 +18,8 @@
     "test:production": "node scripts/production-smoke.mjs",
     "admin:password": "node scripts/reset-admin-password.mjs",
     "prestart": "node scripts/prepare-swc.mjs && node scripts/setup-database.mjs",
-    "prebuild": "node scripts/prepare-swc.mjs"
+    "prebuild": "node scripts/prepare-swc.mjs",
+    "test:login-errors": "node scripts/login-failure-smoke.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

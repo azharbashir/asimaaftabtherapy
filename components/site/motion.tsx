@@ -7,11 +7,13 @@ const REVEAL=['.s-head','.s-card','.s-post','.b-head','.b-card','.b-featured','.
 /** Scroll-reveal animations for the public site. Skipped entirely when the visitor prefers reduced motion. */
 export function useReveal(){
  useEffect(()=>{
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches||!('IntersectionObserver' in window))return;
   const io=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}},{rootMargin:'0px 0px -8% 0px',threshold:.08});
+  const tagged=new Set<HTMLElement>();
   const tag=()=>{
    document.querySelectorAll<HTMLElement>(REVEAL).forEach(el=>{
     if(el.dataset.rv)return;
+    tagged.add(el);
     el.dataset.rv='1';
     // Already on screen when first seen: leave visible so nothing flashes.
     if(el.getBoundingClientRect().top<window.innerHeight*.92)return;
@@ -26,7 +28,16 @@ export function useReveal(){
   let raf=0;
   const mo=new MutationObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(tag);});
   mo.observe(document.body,{childList:true,subtree:true});
-  return()=>{io.disconnect();mo.disconnect();cancelAnimationFrame(raf);};
+  return()=>{
+   io.disconnect();mo.disconnect();cancelAnimationFrame(raf);
+   // Strict Mode replays effects. Restore visibility and allow the next setup
+   // to observe these elements instead of leaving unobserved hidden sections.
+   for(const el of tagged){
+    delete el.dataset.rv;
+    el.classList.remove('rv','in');
+    el.style.removeProperty('--rv-d');
+   }
+  };
  },[]);
 }
 

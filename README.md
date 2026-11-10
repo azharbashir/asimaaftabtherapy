@@ -1,6 +1,6 @@
 # Asima Aftab Psychotherapy
 
-A Next.js website and practice workspace, prepared for Node.js hosting on Hostinger with GitHub deployments. Includes appointment requests, Admin/Manager/User roles, account management, editable website content and image uploads.
+A Next.js website and practice workspace, prepared for Node.js hosting on Hostinger with GitHub deployments. Includes appointment requests, service reviews with admin approval, Admin/Manager/User roles, account management, editable website content and image uploads.
 
 ## Hostinger deployment
 
@@ -54,3 +54,11 @@ Booking dates are requests, not reserved calendar slots. No email, SMS, payment 
 GitHub Actions runs type checking, a lint, production dependency audit, production build and end-to-end server checks using an isolated database.
 # asimaaftabtherapy
 # asimaaftabtherapy
+
+## Service reviews
+
+Open `/reviews` to browse approved feedback by service or rating and submit a review through the popup. Rating summaries contain approved reviews only. Administrators moderate submissions under **Admin → Reviews**; pending and rejected submissions stay private. New installations start with no reviews. The shared homepage/FAQ testimonial carousel shows the six latest approved reviews, including their actual ratings and services, and links to the full reviews page.
+
+## Booking on WhatsApp
+
+After a booking request is saved, its confirmation popup offers **Send booking on WhatsApp** when a practice phone number is marked for WhatsApp. The link prepares the submitted details (including optional notes); the visitor reviews the draft and taps Send in WhatsApp. The request remains saved regardless of whether the visitor sends it. Configure the number under **Practice details**. No WhatsApp Business API credentials are required for this handoff.

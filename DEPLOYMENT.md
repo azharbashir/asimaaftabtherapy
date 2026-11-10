@@ -108,3 +108,21 @@ Active migrations live in `migrations/mysql/`. Earlier SQLite migrations and `dr
 The project uses `next.config.mjs` so loading configuration does not require compiling TypeScript. The matching `@next/swc-wasm-nodejs` package is installed explicitly and staged by `scripts/prepare-swc.mjs` before build/start so Next.js can fall back to WebAssembly when Hostinger cannot load its Linux native compiler (for example, GLIBC_2.29 missing). Keep the build command `npm run build`, which uses webpack; Turbopack requires native bindings. Keep Next.js and the WASM package on the same version when upgrading.
 
 After pulling this change, run a fresh install (`npm ci --include=dev`) and redeploy. Do not set `NEXT_DISABLE_SWC_WASM`. If logs still reference `next.config.ts`, Hostinger is building an older commit or the wrong project directory.
+
+## Empty response / JSON error during admin login
+
+An empty HTTP 500 response is a server error, not evidence of an incorrect password. Ensure `APP_URL=https://asimaaftabtherapy.com` includes `https://`, remove stale SQLite/Turso `DATABASE_URL` values, and verify all five `DB_*` fields. Keep start command `npm start` so `prestart` creates the tables and initial administrator. Look for `Database migrations complete` in Runtime Logs.
+
+Login failures now log `[login] Sign-in failed` with a reference and error code, without logging credentials or submitted personal data. Common codes: `DB_CONFIG_MISSING_DB_*` means a required MySQL environment variable is missing; `ERR_INVALID_URL` means an invalid APP_URL or DATABASE_URL; `ER_ACCESS_DENIED_ERROR` indicates MySQL credentials/permissions; `ER_BAD_DB_ERROR` means the database name is incorrect; `ER_NO_SUCH_TABLE` means migrations have not completed; `ECONNREFUSED` or `ETIMEDOUT` means the database connection could not be established. Fix the cause and restart/redeploy. Password recovery uses `npm run admin:password` after configuring the intended MySQL database privately.
+
+## Service reviews
+
+The public `/reviews` page includes service/rating filters, rating-distribution bars, sorting and pagination. Visitors submit a service, 1–5 star rating, optional display name and review text in a popup, with explicit publication consent. New reviews are pending and are excluded from all public lists and rating summaries. No sample reviews are inserted.
+
+Administrators approve, reject, return to pending or delete submissions under **Admin → Reviews**. Managers do not have moderation access. The shared homepage/FAQ testimonial carousel uses the six latest approved service reviews, with actual ratings and service labels. Use Admin → Reviews to manage the shared review content; the legacy Testimonials editor has been removed. Deleting, rejecting or returning a review to pending removes it from public lists and statistics.
+
+Include `migrations/mysql/0001_busy_layla_miller.sql` and its migration metadata when pushing to GitHub. `npm start` applies this additive migration before serving the app; it creates the reviews table and indexes without replacing existing content or accounts. The production smoke suite tests review privacy, role checks, validation, aggregation, filters, sorting, pagination and moderation in an isolated database.
+
+## WhatsApp booking handoff
+
+Under **Admin → Practice details**, mark the intended practice phone number as WhatsApp and save it. The first enabled WhatsApp number receives drafts prepared by the booking confirmation popup. This is a visitor-controlled WhatsApp link after successful database storage, not automatic server messaging. Visitors must review the draft and press Send; optional booking notes are included in the draft. If no WhatsApp number is configured, the standard booking confirmation remains available.
