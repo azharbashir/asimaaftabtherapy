@@ -43,3 +43,14 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+# Persistent database files and exports
+/.data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+/backups/
+!.env.example

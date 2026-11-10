@@ -1,7 +1,8 @@
 'use client';
+import './booking-success.css';
 import {Copy,useCopy} from './copy';
 import {WhatsAppIcon} from './social';
-import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
+import {useEffect,useId,useRef,useState,useSyncExternalStore} from 'react';
 import Link from 'next/link';
 import {Mail,CalendarDays,CheckCircle2,Tag,ArrowRight,ArrowUpRight,Sparkles,MessagesSquare as Chat,Sprout,Home as HomeIcon,Phone,Plus,Quote,MapPin,ChevronLeft,ChevronRight,Star,MessagesSquare} from 'lucide-react';
 import {slugify} from '../../lib/site-content';
@@ -77,8 +78,10 @@ export function ContactDetails(){const t=useCopy();
 export function BookingForm({session,onSession}:{session?:string;onSession?:(s:string)=>void}){const t=useCopy();
  const c=useContent();
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[ok,setOk]=useState(false),[notes,setNotes]=useState('');
- async function book(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setMessage('');setOk(false);const f=e.currentTarget;const data=Object.fromEntries(new FormData(f));try{const r=await fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone})});const d=await r.json() as {error?:string};if(!r.ok)throw Error(d.error);setOk(true);setMessage(t('Thank you. Your request has been received. {name} will contact you to confirm your session.').replace('{name}',firstName(c.name)));f.reset();setNotes('');onSession?.('');}catch(e){setMessage(e instanceof Error&&e.message?e.message:t('Please try again.'));}finally{setBusy(false);}}
- return <form id="book-form" className="s-form" onSubmit={book}>
+ const successDialog=useRef<HTMLDialogElement>(null),successId=useId();
+ useEffect(()=>{if(ok&&!successDialog.current?.open)successDialog.current?.showModal();},[ok]);
+ async function book(e:React.FormEvent<HTMLFormElement>){e.preventDefault();if(busy)return;setBusy(true);setMessage('');setOk(false);const f=e.currentTarget;const data=Object.fromEntries(new FormData(f));try{const r=await fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone})});const d=await r.json() as {error?:string};if(!r.ok)throw Error(d.error);setOk(true);setMessage(t('Thank you. Your request has been received. {name} will contact you to confirm your session.').replace('{name}',firstName(c.name)));f.reset();setNotes('');onSession?.('');}catch(e){setMessage(e instanceof Error&&e.message?e.message:t('Please try again.'));}finally{setBusy(false);}}
+ return <><form id="book-form" className="s-form" onSubmit={book}>
   <h3><Copy text="Book an Appointment"/></h3><p><Copy text="Fill in the form below and I’ll get back to you to confirm your session."/></p>
   <div className="s-row"><label><Copy text="Full Name *"/><input name="name" required maxLength={120} placeholder={t("Your name")} autoComplete="name"/></label><label><Copy text="Email Address *"/><input type="email" name="email" required maxLength={254} placeholder={t("your@email.com")} autoComplete="email"/></label></div>
   <div className="s-row"><label><Copy text="Phone Number *"/><input type="tel" name="phone" required minLength={5} maxLength={40} pattern="[+\d\s()\-]+" placeholder={t("+44 7xxx xxxxxx")} autoComplete="tel"/></label><label><Copy text="Session Type *"/><select name="sessionType" required {...(onSession?{value:session??'',onChange:(e:React.ChangeEvent<HTMLSelectElement>)=>onSession(e.target.value)}:{defaultValue:''})}><option value="" disabled>{t("Select session type")}</option>{c.sessions.map(s=><option key={s.title}>{s.title}</option>)}</select></label></div>
@@ -87,8 +90,16 @@ export function BookingForm({session,onSession}:{session?:string;onSession?:(s:s
   <label className="s-consent"><input type="checkbox" required/> <Copy text="I agree to be contacted about my appointment request and understand my details will be stored for this purpose."/></label>
   <button className="s-btn lg block" disabled={busy}><CalendarDays size={18}/> {busy?t('Sending…'):t('Submit Booking Request')}</button>
   <small className="s-note"><Copy text="This is a request, not a confirmed booking. Dates depend on availability."/></small>
-  <p role="status" className={'s-status'+(ok?'':' err')}>{message}</p>
- </form>;
+  {!ok&&<p role="status" className="s-status err">{message}</p>}
+ </form>
+ <dialog ref={successDialog} className="s-booking-success" aria-labelledby={successId+'-title'} aria-describedby={successId+'-message'} onClose={()=>{setOk(false);setMessage('');}}>
+  <div className="s-booking-success-icon"><CheckCircle2 size={34} strokeWidth={1.5}/></div>
+  <span className="s-booking-success-kicker"><Copy text="THANK YOU FOR REACHING OUT"/></span>
+  <h2 id={successId+'-title'}><Copy text="Request received"/></h2>
+  <p id={successId+'-message'}>{message}</p>
+  <div className="s-booking-success-note"><CalendarDays size={17}/><span><Copy text="Your session will be confirmed after we contact you."/></span></div>
+  <button type="button" className="s-btn lg block" autoFocus onClick={()=>successDialog.current?.close()}><Copy text="Done"/></button>
+ </dialog></>;
 }
 
 export function BookingSection(){return <section className="s-booking s-sec"><div className="s-wrap s-booking-grid"><ContactDetails/><BookingForm/></div></section>;}

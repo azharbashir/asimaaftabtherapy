@@ -1,0 +1,30 @@
+name: Production checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: https://example.com
+      DATABASE_URL: file:.data/ci.db
+      ADMIN_EMAIL: ci@example.com
+      ADMIN_NAME: CI administrator
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --include=dev
+      - name: Generate isolated test password
+        run: node -e 'require("node:fs").appendFileSync(process.env.GITHUB_ENV,"ADMIN_PASSWORD="+require("node:crypto").randomBytes(32).toString("hex")+"\n")'
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run build
+      - run: npm run test:production

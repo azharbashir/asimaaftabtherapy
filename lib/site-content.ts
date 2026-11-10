@@ -10,6 +10,7 @@ export type Article = {title:string;category:string;body:string;image:string;dat
 export const defaults = {
  copy: {...copyDefaults},
  // Practice details
+ logoImage: '', brandTagline: '',
  name: 'Asima Aftab', tagline: 'Psychotherapist & Counsellor', email: '', credentials: '', fee: '',
  phones: [] as PhoneNumber[],
  socials: {facebook:'',instagram:'',linkedin:''} as Socials,
@@ -42,7 +43,7 @@ export const defaults = {
  {title:'Relationships & connection',text:'Explore communication, boundaries, and the relationships that shape your world.',image:'',icon:'heart'},
  {title:'Stress & life transitions',text:'Find time to reflect when life feels demanding, uncertain, or different from what you expected.',image:'',icon:'leaf'},
  {title:'Self-esteem & growth',text:'Get to know yourself with more compassion and explore what a meaningful life looks like for you.',image:'',icon:'sparkles'},
- {title:'Trauma & difficult experiences',text:'A sensitive space to discuss difficult experiences at a pace that feels right for you.',image:'',icon:'flower'}],
+ {title:'Trauma & difficult experiences',text:'A sensitive space to discuss difficult experiences at a pace that feels right for you.',image:'',icon:'flower'}].map(s=>({...s,badge:'Online therapy',duration:'',price:''})),
  articles: [{title:'What to expect from your first therapy session',category:'STARTING THERAPY',image:'',date:'',body:'Your first conversation is a chance to ask questions and talk about what brings you to therapy. You can share at your own pace. Discuss confidentiality, availability, and fees before deciding whether to continue.'},{title:'Making room for yourself in a busy world',category:'EVERYDAY WELLBEING',image:'',date:'',body:'Notice what takes your energy and what helps you feel restored. A quiet walk, a pause between tasks, or a clear boundary can create a little breathing space. Your needs deserve attention too.'}] as Article[],
  faqs:[{q:'How do I book an appointment?',a:'Complete the appointment request below. Your preferred date is a request, and your session is only confirmed after you receive a personal response.'},{q:'Where do sessions take place?',a:'You can request an online session. The meeting platform and joining details will be agreed when your appointment is confirmed.'},{q:'How much does a session cost?',a:'Fees and session duration will be discussed before you book. There is no payment collected through this website.'},{q:'Do I need to know what to talk about?',a:'You do not need to have everything worked out. Your first conversation is an opportunity to explore what you would like support with.'}],
  testimonials: [] as Testimonial[]
@@ -52,7 +53,7 @@ export type SiteContent = typeof defaults;
 /** Older saved content may lack newer fields; fill them from defaults. The old single `phone` field becomes the first phone number. */
 export const withDefaults = (d: Partial<SiteContent> & {phone?:string}): SiteContent => {
  const {phone, ...rest} = d;
- const merged: SiteContent = {...defaults, ...rest, copy: {...defaults.copy,...rest.copy}, socials: {...defaults.socials, ...rest.socials}, services: (rest.services ?? defaults.services).map(s=>({...s,image:s.image??''})), articles: (rest.articles ?? defaults.articles).map(a => ({...a, image: a.image ?? '', date: a.date ?? ''}))};
+ const merged: SiteContent = {...defaults, ...rest, copy: {...defaults.copy,...rest.copy}, socials: {...defaults.socials, ...rest.socials}, services: (rest.services ?? defaults.services).map(s=>({...s,image:s.image??'',badge:s.badge??'Online therapy',duration:s.duration??'',price:s.price??''})), articles: (rest.articles ?? defaults.articles).map(a => ({...a, image: a.image ?? '', date: a.date ?? ''}))};
  if (!rest.phones && phone) merged.phones = [{label:'Phone / WhatsApp', number: phone, whatsapp: true}];
  return merged;
 };

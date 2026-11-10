@@ -11,6 +11,7 @@ const url=z.union([z.literal(''),z.string().max(2000).url().refine(v=>v.startsWi
 const image=z.union([url,z.string().regex(/^\/api\/images\/[0-9a-f-]{36}$/)]);
 const schema=z.object({
  copy:z.record(z.string().max(200),text).default({}),
+ logoImage:image.default(''),brandTagline:short.default(''),
  name:z.string().min(1).max(120),tagline:short,email:z.union([z.literal(''),z.string().email()]),credentials:text,fee:text,
  phones:z.array(z.object({label:short,number:z.string().trim().min(3).max(40).regex(/^[+\d\s()-]+$/,'Phone numbers may contain digits, spaces, +, ( ) and - only'),whatsapp:z.boolean()})).max(6),
  socials:z.object({facebook:url,instagram:url,linkedin:url}),
@@ -21,7 +22,7 @@ const schema=z.object({
  sessions:z.array(z.object({title:short,subtitle:short,price:short,features:text})).min(1).max(4),
  onlineIntro:text,onlineItems:z.array(z.object({title:short,text})).max(10),
  footerText:text,
- services:z.array(z.object({title:text,text,icon:text,image:image.default('')})).max(30),
+ services:z.array(z.object({title:text,text,icon:text,image:image.default(''),badge:short.default('Online therapy'),duration:short.default(''),price:short.default('')})).max(30),
  articles:z.array(z.object({title:text,category:text,body:text,image,date:z.union([z.literal(''),z.string().regex(/^\d{4}-\d{2}-\d{2}$/)])})).max(50),
  faqs:z.array(z.object({q:text,a:text})).max(40),
  testimonials:z.array(z.object({quote:text,name:short,location:short})).max(30)});

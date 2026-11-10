@@ -28,3 +28,5 @@
 .admin-layout .brand-mark img{width:42px;height:42px;object-fit:contain}
 .admin-layout .welcome-logo{width:146px;height:146px;filter:drop-shadow(0 12px 20px #346e5520)}
 .admin-layout .welcome-logo img{width:100%;height:100%;object-fit:contain}
+.admin-layout .status-cancelled{--status-color:#e33946;--status-bg:#fff0f2}
+.admin-layout .branding-preview{display:flex;align-items:center;gap:16px;border:1px solid #e2e9dd;background:#f7faf4;padding:20px;border-radius:10px;margin-top:15px}.admin-layout .branding-preview>span{width:64px;height:64px;flex-shrink:0;display:grid;place-items:center;color:#52744d}.admin-layout .branding-preview img{width:100%;height:100%;object-fit:contain}.admin-layout .branding-preview strong{display:block;font-size:19px;color:#315540}.admin-layout .branding-preview small{display:block;font-size:10px;color:#809174}.admin-layout .branding-preview em{display:block;margin-top:5px;font-family:Georgia,serif;color:#78916f;font-size:13px}.admin-layout .sidebar-brand .brand small{white-space:normal;line-height:1.5}
