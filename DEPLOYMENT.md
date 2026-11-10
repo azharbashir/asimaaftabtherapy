@@ -28,7 +28,7 @@ Choose **Websites → Add website → Node.js Web App → Import Git Repository*
 | Output | `.next` |
 | Start | `npm start` |
 
-Some fields may be filled automatically. Keep the start command as `npm start`: its `prestart` script applies migrations and initializes the first admin before serving requests. The build itself does not need database access. Do not set `NPM_CONFIG_OMIT=dev` for builds or set a production `PORT`; Hostinger supplies the server port.
+Some fields may be filled automatically. Keep the start command as `npm start`: its `prestart` script applies migrations and initializes the first admin before serving requests. The build itself does not need database access. Keep `npm ci --include=dev` for full tooling, and do not set a production `PORT`; Hostinger supplies the server port. Packages required to build CSS and TypeScript are in `dependencies` so production-only installs can also build.
 
 ## 4. Configure environment variables
 
@@ -126,3 +126,9 @@ Include `migrations/mysql/0001_busy_layla_miller.sql` and its migration metadata
 ## WhatsApp booking handoff
 
 Under **Admin → Practice details**, mark the intended practice phone number as WhatsApp and save it. The first enabled WhatsApp number receives drafts prepared by the booking confirmation popup. This is a visitor-controlled WhatsApp link after successful database storage, not automatic server messaging. Visitors must review the draft and press Send; optional booking notes are included in the draft. If no WhatsApp number is configured, the standard booking confirmation remains available.
+
+## Missing @tailwindcss/postcss during build
+
+The build needs `@tailwindcss/postcss`, `tailwindcss`, `tw-animate-css`, TypeScript and its type declarations. They are listed in `dependencies` so Hostinger retains them even with `NODE_ENV=production` and development dependencies omitted. `postcss.config.mjs` uses the exact plugin name `@tailwindcss/postcss`.
+
+Push both `package.json` and `package-lock.json`, then redeploy with a clean install. Prefer `npm ci --include=dev` when the install command is editable. A stale installation or older commit can still produce a missing-module error. SWC native warnings are separate; the build uses the prepared WASM fallback where needed.
