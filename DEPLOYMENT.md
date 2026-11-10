@@ -10,7 +10,7 @@ For a Node.js app running on the same Hostinger hosting account, Hostinger docum
 
 ## 2. Publish the project to GitHub
 
-Publish the contents of `asima-aftab` as a private GitHub repository, with `package.json`, `app/`, `db/`, `migrations/mysql/`, and `next.config.ts` at the root. In GitHub Desktop, add this folder, review the changes, commit and Publish repository. Future updates are commits pushed to the connected branch.
+Publish the contents of `asima-aftab` as a private GitHub repository, with `package.json`, `app/`, `db/`, `migrations/mysql/`, and `next.config.mjs` at the root. In GitHub Desktop, add this folder, review the changes, commit and Publish repository. Future updates are commits pushed to the connected branch.
 
 Do not upload `.env.local`, `.data/`, `.wrangler/`, `node_modules/`, `.next/`, backups or database exports. They are ignored by Git. Never include credentials in a commit. Wait for **Actions → Production checks** to pass; CI uses its own disposable MySQL service and tests authentication, permissions, booking lifecycle, uploaded images, content saving and repeat initialization.
 
@@ -102,3 +102,9 @@ Active migrations live in `migrations/mysql/`. Earlier SQLite migrations and `dr
 - **403 on login or booking:** browser origin must exactly match `APP_URL`; update it and restart/redeploy.
 - **Repeated login redirects:** use HTTPS for production session cookies.
 - **Missing content:** import local data in section 6 or edit content in the hosted dashboard; it does not travel in GitHub.
+
+## Older Hostinger build systems (GLIBC / SWC)
+
+The project uses `next.config.mjs` so loading configuration does not require compiling TypeScript. The matching `@next/swc-wasm-nodejs` package is installed explicitly and staged by `scripts/prepare-swc.mjs` before build/start so Next.js can fall back to WebAssembly when Hostinger cannot load its Linux native compiler (for example, GLIBC_2.29 missing). Keep the build command `npm run build`, which uses webpack; Turbopack requires native bindings. Keep Next.js and the WASM package on the same version when upgrading.
+
+After pulling this change, run a fresh install (`npm ci --include=dev`) and redeploy. Do not set `NEXT_DISABLE_SWC_WASM`. If logs still reference `next.config.ts`, Hostinger is building an older commit or the wrong project directory.
