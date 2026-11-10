@@ -52,3 +52,4 @@ Authentication uses database-backed sessions, hashed passwords and HttpOnly cook
 Booking dates are requests, not reserved calendar slots. No email, SMS, payment or external calendar integration is configured. The practice contacts clients to confirm sessions.
 
 GitHub Actions runs type checking, a production dependency audit, production build and end-to-end server checks using an isolated database.
+# asimaaftabtherapy
