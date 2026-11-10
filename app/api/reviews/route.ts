@@ -1,3 +1,4 @@
+import {logServerError} from '../../../lib/server-error';
 import {and,asc,avg,count,desc,eq,sql} from 'drizzle-orm';
 import {z} from 'zod';
 import {getDb} from '../../../db';
@@ -23,7 +24,7 @@ export async function GET(request:Request){
   const order=sort==='highest'?[desc(reviews.rating),desc(reviews.createdAt),desc(reviews.id)]:sort==='lowest'?[asc(reviews.rating),desc(reviews.createdAt),desc(reviews.id)]:[desc(reviews.createdAt),desc(reviews.id)];
   const rows=await db.select({id:reviews.id,service:reviews.service,rating:reviews.rating,displayName:reviews.displayName,body:reviews.body,createdAt:reviews.createdAt}).from(reviews).where(filtered).orderBy(...order).limit(pageSize).offset((page-1)*pageSize);
   return Response.json({reviews:rows,total,page,pageSize,services:services.map(s=>s.service),summary:{total:Number(stats.total),average:Number(stats.average||0),distribution:[stats.one,stats.two,stats.three,stats.four,stats.five].map(Number)}},{headers});
- }catch{return Response.json({error:'Reviews could not be loaded. Please try again.'},{status:503,headers});}
+ }catch(error){const reference=logServerError('reviews',error);return Response.json({error:'Reviews could not be loaded. Please try again.',reference},{status:503,headers});}
 }
 export async function POST(request:Request){
  try{

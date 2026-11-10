@@ -1,3 +1,4 @@
+import {logServerError} from '../../../lib/server-error';
 import {getDb} from '../../../db';
 import {content,images} from '../../../db/schema';
 import {and,lt,notInArray} from 'drizzle-orm';
@@ -34,5 +35,9 @@ async function removeUnusedImages(value:string){
   await getDb().delete(images).where(used.length?and(lt(images.createdAt,cutoff),notInArray(images.id,used)):lt(images.createdAt,cutoff));
  }catch{/* cleanup is best-effort */}
 }
-export async function GET(){try{const rows=await getDb().select().from(content);return Response.json(rows.length?withDefaults(JSON.parse(rows[0].value)):defaults);}catch{return Response.json({error:'Content could not be loaded.'},{status:503});}}
+export async function GET(){
+ const headers={'Cache-Control':'no-store'};
+ try{const rows=await getDb().select().from(content);return Response.json(rows.length?withDefaults(JSON.parse(rows[0].value)):defaults,{headers});}
+ catch(error){const reference=logServerError('content',error);return Response.json({error:'Content could not be loaded.',reference},{status:503,headers});}
+}
 export async function PUT(request:Request){if(!await isAdmin(request))return Response.json({error:'Administrator sign-in required.'},{status:403});try{const parsed=schema.safeParse(await request.json());if(!parsed.success){const i=parsed.error.issues[0];return Response.json({error:`Please check “${i.path.join(' › ')}”: ${i.message}`},{status:400});}const value=JSON.stringify(parsed.data);if(value.length>200000)return Response.json({error:'Website content is too large.'},{status:400});await getDb().insert(content).values({id:'site',value}).onDuplicateKeyUpdate({set:{value}});await removeUnusedImages(value);return Response.json({ok:true});}catch{return Response.json({error:'Could not save changes.'},{status:500});}}
