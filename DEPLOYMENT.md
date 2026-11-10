@@ -1,129 +1,104 @@
-# Deploy through GitHub to Hostinger
+# Deploy MySQL + Next.js through GitHub to Hostinger
 
-This guide targets **Hostinger Node.js Web Apps (Business/Cloud)**. The application is a server-rendered Next.js app with API routes; uploading static files into `public_html` will not run bookings or the admin dashboard.
+This app uses Hostinger MySQL through `mysql2` and Drizzle. Turso and `DATABASE_AUTH_TOKEN` are no longer used. Use Hostinger **Node.js Web Apps**, not a static upload to `public_html`.
 
-## Deployment checklist
+## 1. Create your Hostinger database
 
-The GitHub repository root must be this `asima-aftab` folder (the folder containing `package.json`). Choose **Node.js Web App → Import Git Repository → Next.js** in Hostinger, then use:
+In hPanel, open your website's **Databases → Management** and create a dedicated MySQL database and user. Copy the complete names, including Hostinger's account prefix, and keep the password private. Use a fresh database for this app.
 
-- **Node:** 22.x
-- **Install:** `npm ci --include=dev`
-- **Build:** `npm run build`
-- **Output:** `.next`
-- **Start:** `npm start`
-- **Environment:** configure all variables in section 4 before deploying.
+For a Node.js app running on the same Hostinger hosting account, Hostinger documents host **127.0.0.1**, port **3306**. Do not use `localhost` (which can resolve to IPv6) or the remote MySQL hostname for the hosted app. See [Hostinger's MySQL connection guide](https://www.hostinger.com/support/connecting-a-hostinger-mysql-database-to-a-node-js-application/).
 
-Wait for the GitHub **Production checks** workflow to pass before deploying. It checks TypeScript, lint, production dependencies, the build, and login/bookings/content/image persistence against an isolated test database.
+## 2. Publish the project to GitHub
 
-**Local content is separate from GitHub.** Uploading code does not upload saved website text, accounts, appointments or images. Follow section 6 to transfer existing local data, or configure the public content through the hosted admin dashboard. The current local database contains no uploaded images; add your practice images before launch. Use a fresh production admin password rather than the local development password.
+Publish the contents of `asima-aftab` as a private GitHub repository, with `package.json`, `app/`, `db/`, `migrations/mysql/`, and `next.config.ts` at the root. In GitHub Desktop, add this folder, review the changes, commit and Publish repository. Future updates are commits pushed to the connected branch.
 
-## 1. Create the production database
+Do not upload `.env.local`, `.data/`, `.wrangler/`, `node_modules/`, `.next/`, backups or database exports. They are ignored by Git. Never include credentials in a commit. Wait for **Actions → Production checks** to pass; CI uses its own disposable MySQL service and tests authentication, permissions, booking lifecycle, uploaded images, content saving and repeat initialization.
 
-Create a Turso account and a database in a region suitable for your practice. From its dashboard, copy the database URL (`libsql://...turso.io`) and generate a database auth token with read/write access. Use a dedicated database for this application. Keep its token private.
+## 3. Connect Hostinger
 
-This project uses SQLite/libSQL through Drizzle. Hostinger's MySQL credentials are not interchangeable with these settings. A remote database keeps users, bookings, content and uploaded images outside Hostinger's replaceable deployment files. A VPS can instead use a SQLite file on a backed-up persistent volume, with an absolute `file:/.../app.db` URL.
-
-References: [Turso TypeScript client](https://docs.turso.tech/sdk/ts/reference), [Drizzle libSQL](https://orm.drizzle.team/docs/get-started/turso-new).
-
-## 2. Put the project on GitHub
-
-Create a **private, empty repository** on GitHub, for example `asima-aftab-psychotherapy`. Upload the contents of the `asima-aftab` directory so `package.json`, `package-lock.json`, `app/`, `migrations/` and `next.config.ts` are at the repository root.
-
-With GitHub Desktop, add the existing `asima-aftab` repository, review the changed files, commit them and choose **Publish repository**, keeping it private. Alternatively, after committing through your Git client, add your GitHub remote and push:
-
-```bash
-git remote add github https://github.com/YOUR_USERNAME/asima-aftab-psychotherapy.git
-git push github HEAD:main
-```
-
-Do not upload `.env.local`, `.env.production.local`, `.data/`, `.wrangler/`, database backups, `node_modules/`, `.next/` or `dist/`. `.gitignore` excludes these. `.env.example` is safe to commit; it contains no password or token. If the whole parent directory is the repository, select `asima-aftab` as Hostinger's root directory instead.
-
-GitHub CI checks this repository on pushes and pull requests. It does not deploy or modify your production database.
-
-## 3. Connect Hostinger to GitHub
-
-In Hostinger's dashboard:
-
-1. Open **Websites → Create site → Web App**.
-2. Select **Import Git Repository**.
-3. Authorize Hostinger for the private repository you created.
-4. Select the repository and branch `main`.
-5. Select framework **Next.js** and configure:
+Choose **Websites → Add website → Node.js Web App → Import Git Repository**, authorize your GitHub repository and select branch `main`.
 
 | Setting | Value |
 | --- | --- |
-| Node version | **22.x** |
-| Package manager | npm |
-| Root directory | `.` when `package.json` is at the repository root |
-| Install command, if editable | `npm ci --include=dev` |
-| Build command/script | `npm run build` / `build` |
-| Output directory | `.next` |
-| Start command, if shown | `npm start` |
+| Framework | Next.js |
+| Node version | 22.x |
+| Root directory | `.` if package.json is at repository root; otherwise `asima-aftab` |
+| Install | `npm ci --include=dev` |
+| Build | `npm run build` |
+| Output | `.next` |
+| Start | `npm start` |
 
-Keep the framework set to Next.js rather than Vite or a static React app. The build script includes database initialization; do not replace it with only `next build`. Build tools such as TypeScript and Tailwind must be installed, so do not set `NPM_CONFIG_OMIT=dev` during builds. Hostinger manages the server port; do not set `PORT=5173` in production.
+Some fields may be filled automatically. Keep the start command as `npm start`: its `prestart` script applies migrations and initializes the first admin before serving requests. The build itself does not need database access. Do not set `NPM_CONFIG_OMIT=dev` for builds or set a production `PORT`; Hostinger supplies the server port.
 
-Hostinger's interface may automatically fill or hide some framework-specific fields. Its official flow is documented in [Deploy a Node.js web app](https://www.hostinger.com/support/how-to-deploy-a-nodejs-website-in-hostinger/).
+## 4. Configure environment variables
 
-## 4. Add environment variables before the first deploy
+Replace the old Turso variables with these. Values are entered individually in Hostinger, without surrounding quotes:
 
-Add these in Hostinger's deployment settings, available to the build and runtime:
-
-| Variable | Value |
+| Key | Value |
 | --- | --- |
 | `NODE_ENV` | `production` |
-| `APP_URL` | Exact HTTPS origin, e.g. `https://yourdomain.com` |
-| `DATABASE_URL` | Turso's `libsql://...` database URL |
-| `DATABASE_AUTH_TOKEN` | Private database token |
+| `APP_URL` | `https://asimaaftabtherapy.com` |
+| `DB_HOST` | `127.0.0.1` |
+| `DB_PORT` | `3306` |
+| `DB_NAME` | Complete MySQL database name from hPanel |
+| `DB_USER` | Complete MySQL username from hPanel |
+| `DB_PASSWORD` | That MySQL user's private password |
 | `ADMIN_EMAIL` | `asimaftabtherapy@gmail.com` |
 | `ADMIN_NAME` | `Asima Aftab` |
-| `ADMIN_PASSWORD` | A new private password, 12–256 characters |
+| `ADMIN_PASSWORD` | A fresh private password, 12–256 characters |
 
-Use the temporary Hostinger HTTPS origin for `APP_URL` if the custom domain is not ready. When you connect the real domain, update `APP_URL` to that origin and redeploy. Redirect `www` to your chosen canonical host, or use the same host as `APP_URL` for logins and forms. The origin contains no page path, query or fragment.
+**Remove `DATABASE_AUTH_TOKEN` and any old `DATABASE_URL=file:...` or `libsql://...`.** When present, `DATABASE_URL` takes precedence over `DB_*`. Individual `DB_*` fields avoid URL-encoding passwords. Alternatively, use `DATABASE_URL=mysql://USER:ENCODED_PASSWORD@127.0.0.1:3306/DATABASE` instead of the five `DB_*` fields; username/password must be percent-encoded.
 
-Choose a fresh production password. There is no hardcoded production login. Do not prefix secrets with `NEXT_PUBLIC_`, add them to GitHub files, or paste them into commit messages.
+Use the temporary Hostinger HTTPS address for `APP_URL` if the real domain is not connected yet. When connecting the domain, update `APP_URL` and redeploy. Use the exact browser origin, with no page path, query or fragment. Redirect `www` to the canonical host.
 
 ## 5. Deploy and verify
 
-Click **Deploy**. The build applies schema migrations to the configured database, creates the first admin when no admin exists, and builds Next.js. On later deployments it preserves accounts, bookings and content. Check the deployment logs for `Database migrations complete` and a successful Next.js build.
+Click **Deploy**. Startup creates the MySQL tables and bootstraps an administrator only when none exists. Future startups preserve accounts, passwords and content. Look for `Database migrations complete` in runtime logs, then test:
 
-After deployment:
+1. Open your HTTPS homepage and `/login`.
+2. Sign in with the production admin email/password above.
+3. Upload images and save a small text edit in the admin dashboard; reload the public page.
+4. Submit a test booking and confirm/cancel/delete it in Appointments.
+5. Create a Manager and verify that it can manage bookings but cannot edit users or site content.
+6. Sign out and sign in again.
 
-1. Open the HTTPS homepage and `/login`.
-2. Sign in using `ADMIN_EMAIL` and your production password.
-3. Open **Users** and create a Manager account if needed.
-4. Submit a test booking on `/booking`; verify the success popup and the new row in Appointments.
-5. Confirm and cancel the test booking; verify Manager access and sign-out.
-6. Edit a small piece of website text, save it and reload the public page.
+After initialization, you can remove `ADMIN_PASSWORD` from the hosting environment. Existing administrators are preserved. This app does not send booking email/SMS, collect payments or synchronize external calendars; the practice confirms appointments directly.
 
-After successful setup you can remove `ADMIN_PASSWORD` from Hostinger's environment and restart/redeploy. Existing database accounts remain; builds do not require the bootstrap password when an admin already exists. Keep the database variables and `APP_URL` configured.
+## 6. Transfer previous local SQLite data (optional)
 
-## 6. Bring over existing local data (optional)
+GitHub transfers code, not saved content or images. Your existing `.data/app.db` is preserved locally. Deploy first so the production admin and schema exist. Back up your MySQL database before importing.
 
-Your previous local data was copied into the ignored `.data/app.db` during this preparation. It is not included in GitHub. The new hosted database starts empty unless you import records.
+On your computer, install dependencies with `npm ci --include=dev`. Configure the destination MySQL connection in a private `.env.local` (or process environment). For remote access from your computer, allow your IP in Hostinger's **Remote MySQL** section and use the remote MySQL hostname shown there, rather than `127.0.0.1`. See [Hostinger remote access](https://www.hostinger.com/support/1583546-how-to-set-up-remote-mysql-access-in-hostinger/).
 
-First deploy the hosted app so its production admin is created with your new password. Then, on your own computer, temporarily configure the **destination** production `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in a private `.env.local` file. Run from the project directory:
+Run:
 
 ```bash
 SOURCE_DATABASE_URL=file:.data/app.db npm run db:import
 ```
 
-The importer copies content, appointments, images and users in a transaction. Existing destination records are preserved, including an administrator with the same email and its new password. Sessions are not copied; users sign in again. Imported additional accounts retain their existing roles and password hashes. Restore your local development database settings afterward. Back up the destination before importing into a database that already contains live practice data.
+The import is transactional. It preserves existing records and the production admin's password when the email already exists. It copies content, images, appointments and other users, but never sessions or SQLite migration history. Validation errors roll back the import. Existing destination content takes precedence. Remove the temporary remote-access rule afterward and restore your local database configuration.
 
-## 7. Future updates and database care
+## 7. Local development and database care
 
-Push commits to the connected GitHub branch and use Hostinger's auto-deployment or Redeploy control. Data remains in the remote database. Check GitHub CI and Hostinger deployment logs after each update. Only deploy reviewed migrations; take a database backup before destructive schema changes.
+Use Node 22 and your own local MySQL database. Copy `.env.example` to `.env.local`, fill in MySQL credentials and an initial admin password, then run `npm run dev`. SQLite is now only an import source; the app requires MySQL for development too.
 
-Configure backups/recovery through your database provider. GitHub stores code, not your booking database or uploaded images. Keep database tokens current and update Hostinger's environment when rotating them.
+Commands:
+
+- `npm run db:setup`: apply MySQL migrations and bootstrap the first admin.
+- `npm run db:generate`: generate a migration after editing `db/schema.ts`.
+- `npm run admin:password`: reset the existing admin selected by `ADMIN_EMAIL` using `ADMIN_PASSWORD`; revoke sessions and clear login lockout.
+- `npm run typecheck` and `npm run lint`: static checks.
+- `MYSQL_TEST_URL=mysql://USER:PASSWORD@127.0.0.1:3306 npm run test:production`: after a build, create a temporary database, run tests, and drop it. Use a local/CI account permitted to create/drop databases, never production credentials.
+
+Active migrations live in `migrations/mysql/`. Earlier SQLite migrations and `drizzle/`, `worker/`, `.openai/`, and Sites helpers are legacy references; do not use their deployment scripts. MySQL DDL implicitly commits: back up before schema changes, review generated migrations and investigate any interrupted migration before retrying. Configure backups through Hostinger and test restoration. Keep users, bookings and images in the MySQL database outside the deployment directory.
 
 ## Troubleshooting
 
-- **No Node.js/Web App option:** confirm your Hostinger plan supports Node.js Web Apps; a static-only hosting flow cannot serve this application.
-- **Build says DATABASE_URL / APP_URL is missing:** add the variables to the build environment as well as runtime settings, then redeploy.
-- **Build asks for ADMIN_EMAIL / ADMIN_PASSWORD:** the database has no administrator yet; set initial credentials and redeploy.
-- **403 on login or booking:** check that the browser origin exactly matches `APP_URL`, including `www`, scheme and port. Use HTTPS in production.
-- **Redirected to login repeatedly:** use HTTPS so the browser can save the Secure session cookie. Do not use a static export.
-- **Database errors:** check the Turso URL, token, access and connectivity. A MySQL URL is unsupported by this configured driver.
-- **New deployment loses data:** check that `DATABASE_URL` is remote, not a relative SQLite file in the build directory.
-- **Password recovery:** from a trusted machine, configure the intended database URL/token and the new `ADMIN_EMAIL`/`ADMIN_PASSWORD` in a private environment, then run `npm run admin:password`. It resets only an existing admin and revokes its sessions.
-
-This project has no automatic booking emails, payment processing or external calendar synchronization. Confirmations are handled through the practice workspace and direct contact with the client.
+- **Access denied:** verify full database/user names, password and permissions; the user must be assigned to the database.
+- **Access denied for …@::1:** use `DB_HOST=127.0.0.1` for the hosted app.
+- **Cannot connect:** verify `DB_HOST`, port and database availability. From your own computer use Hostinger's remote hostname and allow your IP.
+- **SQLite/libSQL URL error:** remove the old `DATABASE_URL`; configure `DB_*` for MySQL instead.
+- **Tables missing:** ensure Hostinger runs `npm start`, including `prestart`, and inspect runtime migration logs.
+- **403 on login or booking:** browser origin must exactly match `APP_URL`; update it and restart/redeploy.
+- **Repeated login redirects:** use HTTPS for production session cookies.
+- **Missing content:** import local data in section 6 or edit content in the hosted dashboard; it does not travel in GitHub.

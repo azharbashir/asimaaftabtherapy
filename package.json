@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --webpack --hostname 127.0.0.1 --port 5173",
     "predev": "node scripts/setup-database.mjs",
-    "build": "node scripts/setup-database.mjs && next build --webpack",
+    "build": "next build --webpack",
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
@@ -16,12 +16,12 @@
     "db:setup": "node scripts/setup-database.mjs",
     "db:import": "node scripts/import-local-data.mjs",
     "test:production": "node scripts/production-smoke.mjs",
-    "admin:password": "node scripts/reset-admin-password.mjs"
+    "admin:password": "node scripts/reset-admin-password.mjs",
+    "prestart": "node scripts/setup-database.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@hookform/resolvers": "^5.7.1",
-    "@libsql/client": "0.18.0",
     "@shadcn/react": "^0.3.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -31,6 +31,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.31.0",
+    "mysql2": "^3.24.6",
     "next": "16.4.5",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.6.7",
@@ -46,6 +47,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@libsql/client": "^0.18.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

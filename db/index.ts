@@ -1,10 +1,8 @@
 import 'server-only';
-import {createClient} from '@libsql/client';
-import {drizzle} from 'drizzle-orm/libsql';
+import {createPool} from 'mysql2/promise';
+import {drizzle} from 'drizzle-orm/mysql2';
 import {databaseConfig} from '../lib/database-config.mjs';
 import * as schema from './schema';
-let database:ReturnType<typeof drizzle<typeof schema>>|undefined;
-export function getDb(){
- if(!database)database=drizzle(createClient(databaseConfig()),{schema});
- return database;
-}
+const createDatabase=()=>drizzle(createPool({...databaseConfig(),connectionLimit:5,waitForConnections:true,queueLimit:50}),{schema,mode:'default'});
+const globalDatabase=globalThis as typeof globalThis & {practiceDatabase?:ReturnType<typeof createDatabase>};
+export function getDb(){return globalDatabase.practiceDatabase??=createDatabase();}

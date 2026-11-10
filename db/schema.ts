@@ -1,10 +1,9 @@
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
-export const content = sqliteTable('content', { id: text('id').primaryKey(), value: text('value').notNull() });
-export const appointments = sqliteTable('appointments', { id: text('id').primaryKey(), name: text('name').notNull(), email: text('email').notNull(), phone: text('phone'), sessionType: text('session_type'), message: text('message'), service: text('service').notNull(), date: text('date').notNull(), timezone: text('timezone').notNull(), status: text('status').notNull().default('New'), createdAt: text('created_at').notNull() });
-// Uploaded images (base64), served by /api/images/[id]. Small by design: the dashboard resizes before upload.
-export const images = sqliteTable('images', { id: text('id').primaryKey(), mime: text('mime').notNull(), data: text('data').notNull(), createdAt: text('created_at').notNull() });
-
-export const users = sqliteTable('users', { id: text('id').primaryKey(), authId: text('auth_id').unique(), passwordHash: text('password_hash'), name: text('name').notNull(), email: text('email').notNull().unique(), role: text('role', {enum:['admin','manager','user']}).notNull().default('user'), createdAt: text('created_at').notNull() });
-
-export const sessions = sqliteTable('sessions', {id:text('id').primaryKey(),userId:text('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),expiresAt:text('expires_at').notNull()});
-export const loginAttempts = sqliteTable('login_attempts', {email:text('email').primaryKey(),count:text('count').notNull(),resetAt:text('reset_at').notNull()});
+import {mysqlTable,varchar,text,longtext,int,index} from 'drizzle-orm/mysql-core';
+const id=()=>varchar('id',{length:64}).primaryKey();
+const timestamp=(name:string)=>varchar(name,{length:30}).notNull();
+export const content=mysqlTable('content',{id:id(),value:longtext('value').notNull()});
+export const appointments=mysqlTable('appointments',{id:id(),name:varchar('name',{length:120}).notNull(),email:varchar('email',{length:254}).notNull(),phone:varchar('phone',{length:40}),sessionType:varchar('session_type',{length:80}),message:text('message'),service:varchar('service',{length:120}).notNull(),date:varchar('date',{length:10}).notNull(),timezone:varchar('timezone',{length:100}).notNull(),status:varchar('status',{length:20}).notNull().default('New'),createdAt:timestamp('created_at')});
+export const images=mysqlTable('images',{id:id(),mime:varchar('mime',{length:80}).notNull(),data:longtext('data').notNull(),createdAt:timestamp('created_at')});
+export const users=mysqlTable('users',{id:id(),authId:varchar('auth_id',{length:254}).unique(),passwordHash:varchar('password_hash',{length:255}),name:varchar('name',{length:120}).notNull(),email:varchar('email',{length:254}).notNull().unique(),role:varchar('role',{length:20,enum:['admin','manager','user']}).notNull().default('user'),createdAt:timestamp('created_at')});
+export const sessions=mysqlTable('sessions',{id:id(),userId:varchar('user_id',{length:64}).notNull().references(()=>users.id,{onDelete:'cascade'}),expiresAt:timestamp('expires_at')},table=>[index('sessions_user_id_idx').on(table.userId)]);
+export const loginAttempts=mysqlTable('login_attempts',{email:varchar('email',{length:254}).primaryKey(),count:int('count').notNull(),resetAt:timestamp('reset_at')});

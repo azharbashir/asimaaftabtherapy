@@ -8,9 +8,21 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-mysql-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-mysql-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     env:
       APP_URL: https://example.com
-      DATABASE_URL: file:.data/ci.db
+      MYSQL_TEST_URL: mysql://root:ci-mysql-password@127.0.0.1:3306
       ADMIN_EMAIL: ci@example.com
       ADMIN_NAME: CI administrator
       NEXT_TELEMETRY_DISABLED: '1'

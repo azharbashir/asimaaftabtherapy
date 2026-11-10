@@ -19,8 +19,7 @@ export async function POST(request:Request){
   if(existing)return Response.json({error:'A user with this email already exists.'},{status:409});
   const {password,...details}=parsed.data;
   const user={id:crypto.randomUUID(),...details,createdAt:new Date().toISOString()};
-  const inserted=await db.insert(users).values({...user,passwordHash:await hashPassword(password)}).onConflictDoNothing({target:users.email}).returning({id:users.id});
-  if(!inserted.length)return Response.json({error:'A user with this email already exists.'},{status:409});
+  try{await db.insert(users).values({...user,passwordHash:await hashPassword(password)});}catch(error){if((error as {cause?:{code?:string}}).cause?.code==='ER_DUP_ENTRY'||(error as {code?:string}).code==='ER_DUP_ENTRY')return Response.json({error:'A user with this email already exists.'},{status:409});throw error;}
   return Response.json(user,{status:201});
  }catch{return Response.json({error:'Could not add this user. Please try again.'},{status:400});}
 }
@@ -33,8 +32,8 @@ export async function DELETE(request:Request){
  if(parsed.data.id===current?.id)return Response.json({error:'You cannot remove your own account.'},{status:409});
  try{
   // Foreign-key cascade also revokes every session belonging to this account.
-  const removed=await getDb().delete(users).where(eq(users.id,parsed.data.id)).returning({id:users.id});
-  if(!removed.length)return Response.json({error:'This user no longer exists.'},{status:404});
+  const [removed]=await getDb().delete(users).where(eq(users.id,parsed.data.id));
+  if(!removed.affectedRows)return Response.json({error:'This user no longer exists.'},{status:404});
   return Response.json({ok:true});
  }catch{return Response.json({error:'Could not remove this user. Please try again.'},{status:500});}
 }
@@ -46,7 +45,8 @@ export async function PATCH(request:Request){
  const current=await getAppUser();
  if(parsed.data.id===current?.id)return Response.json({error:'You cannot change your own role.'},{status:409});
  try{
-  const [updated]=await getDb().update(users).set({role:parsed.data.role}).where(eq(users.id,parsed.data.id)).returning({id:users.id,name:users.name,email:users.email,role:users.role,createdAt:users.createdAt});
+  const db=getDb();await db.update(users).set({role:parsed.data.role}).where(eq(users.id,parsed.data.id));
+  const [updated]=await db.select({id:users.id,name:users.name,email:users.email,role:users.role,createdAt:users.createdAt}).from(users).where(eq(users.id,parsed.data.id));
   if(!updated)return Response.json({error:'This user no longer exists.'},{status:404});
   return Response.json(updated);
  }catch{return Response.json({error:'Could not update this role.'},{status:500});}

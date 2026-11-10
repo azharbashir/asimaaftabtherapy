@@ -9,7 +9,8 @@ export async function POST(request:Request){
  const data=await request.json().catch(()=>null) as {email?:unknown;password?:unknown}|null;
  if(typeof data?.email!=='string'||typeof data?.password!=='string'||data.email.length>254||data.password.length>256)return Response.json({error:'Enter your email and password.'},{status:400});
  const email=data.email.trim().toLowerCase(),db=getDb(),now=new Date().toISOString();
- const attempt=await db.insert(loginAttempts).values({email,count:'1',resetAt:new Date(Date.now()+900000).toISOString()}).onConflictDoUpdate({target:loginAttempts.email,set:{count:sql`CASE WHEN reset_at <= ${now} THEN '1' ELSE CAST(count AS INTEGER) + 1 END`,resetAt:sql`CASE WHEN reset_at <= ${now} THEN ${new Date(Date.now()+900000).toISOString()} ELSE reset_at END`}}).returning();
+ await db.insert(loginAttempts).values({email,count:1,resetAt:new Date(Date.now()+900000).toISOString()}).onDuplicateKeyUpdate({set:{count:sql`CASE WHEN reset_at <= ${now} THEN 1 ELSE count + 1 END`,resetAt:sql`CASE WHEN reset_at <= ${now} THEN ${new Date(Date.now()+900000).toISOString()} ELSE reset_at END`}});
+ const attempt=await db.select().from(loginAttempts).where(eq(loginAttempts.email,email));
  if(Number(attempt[0].count)>10)return Response.json({error:'Too many attempts. Try again in 15 minutes.'},{status:429});
  const [user]=await db.select().from(users).where(eq(users.email,email));
  const valid=await verifyPassword(data.password,user?.passwordHash??DUMMY_PASSWORD_HASH);
