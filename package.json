@@ -22,7 +22,8 @@
     "test:login-errors": "node scripts/login-failure-smoke.mjs",
     "mail:verify": "node scripts/verify-mail.mjs",
     "test:mail": "node scripts/mail-smoke.mjs",
-    "db:check": "node scripts/check-database.mjs"
+    "db:check": "node scripts/check-database.mjs",
+    "admin:sql": "node scripts/admin-password-sql.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
