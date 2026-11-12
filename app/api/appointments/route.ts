@@ -1,3 +1,4 @@
+import {sendBookingEmails} from '../../../lib/booking-mail';
 import {isSameOrigin} from '../../../lib/request-origin';
 import {getDb} from '../../../db';
 import {appointments} from '../../../db/schema';
@@ -6,6 +7,17 @@ import {z} from 'zod';
 import {canManageBookings} from '../../../lib/admin';
 const booking=z.object({name:z.string().trim().min(1).max(120),email:z.string().email().max(254),phone:z.string().trim().min(5).max(40).regex(/^[+\d\s()-]+$/),sessionType:z.string().trim().min(1).max(80),message:z.string().trim().max(1000).optional().transform(v=>v||null),service:z.string().min(1).max(120),timezone:z.string().min(1).max(100),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!isNaN(Date.parse(v))&&v>=new Date().toISOString().slice(0,10))});
 export async function GET(request:Request){if(!await canManageBookings(request))return Response.json({error:'Booking manager sign-in required.'},{status:403});return Response.json(await getDb().select().from(appointments).orderBy(desc(appointments.createdAt)),{headers:{'Cache-Control':'no-store'}});}
-export async function POST(request:Request){try{if(!isSameOrigin(request))return Response.json({error:'Invalid request origin.'},{status:403});const parsed=booking.safeParse(await request.json());if(!parsed.success)return Response.json({error:'Please check your details and select a future date.'},{status:400});await getDb().insert(appointments).values({...parsed.data,id:crypto.randomUUID(),status:'New',createdAt:new Date().toISOString()});return Response.json({ok:true},{status:201});}catch{return Response.json({error:'Your request could not be saved. Please try again.'},{status:500});}}
+export async function POST(request:Request){
+ try{
+  if(!isSameOrigin(request))return Response.json({error:'Invalid request origin.'},{status:403});
+  const parsed=booking.safeParse(await request.json());
+  if(!parsed.success)return Response.json({error:'Please check your details and select a future date.'},{status:400});
+  const appointment={...parsed.data,id:crypto.randomUUID(),status:'New',createdAt:new Date().toISOString()};
+  await getDb().insert(appointments).values(appointment);
+  // Await bounded SMTP attempts so hosting cannot end the request before sending.
+  const email=await sendBookingEmails(appointment);
+  return Response.json({ok:true,email},{status:201,headers:{'Cache-Control':'no-store'}});
+ }catch{return Response.json({error:'Your request could not be saved. Please try again.'},{status:500});}
+}
 export async function PATCH(request:Request){if(!await canManageBookings(request))return Response.json({error:'Booking manager sign-in required.'},{status:403});try{const d=z.object({id:z.string().uuid(),status:z.enum(['New','Contacted','Confirmed','Cancelled','Closed'])}).parse(await request.json());const db=getDb();await db.update(appointments).set({status:d.status}).where(eq(appointments.id,d.id));const rows=await db.select({id:appointments.id}).from(appointments).where(eq(appointments.id,d.id));return Response.json({ok:rows.length>0});}catch{return Response.json({error:'Could not update this request.'},{status:400});}}
 export async function DELETE(request:Request){if(!await canManageBookings(request))return Response.json({error:'Booking manager sign-in required.'},{status:403});try{const d=z.object({id:z.string().uuid()}).parse(await request.json());await getDb().delete(appointments).where(eq(appointments.id,d.id));return Response.json({ok:true});}catch{return Response.json({error:'Could not delete this request.'},{status:400});}}

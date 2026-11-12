@@ -2,6 +2,12 @@
 
 This app uses Hostinger MySQL through `mysql2` and Drizzle. Turso and `DATABASE_AUTH_TOKEN` are no longer used. Use Hostinger **Node.js Web Apps**, not a static upload to `public_html`.
 
+## Quick connection setup
+
+In your production hosting environment, set `DB_NAME`, `DB_USER` and `DB_PASSWORD` using the complete names from your hosting panel. The host and port default to `127.0.0.1:3306`; set `DB_HOST` explicitly if your database is on another server. Keep passwords private and enter values without surrounding quotes.
+
+Run `npm run db:check` from the app directory to test the connection without changing data. It explains common connection failures without printing credentials. Then redeploy using `npm start` to initialize tables. First-time setup also requires `APP_URL`, `ADMIN_EMAIL` and `ADMIN_PASSWORD` as described below.
+
 ## 1. Create your Hostinger database
 
 In hPanel, open your website's **Databases → Management** and create a dedicated MySQL database and user. Copy the complete names, including Hostinger's account prefix, and keep the password private. Use a fresh database for this app.
@@ -47,7 +53,7 @@ Replace the old Turso variables with these. Values are entered individually in H
 | `ADMIN_NAME` | `Asima Aftab` |
 | `ADMIN_PASSWORD` | A fresh private password, 12–256 characters |
 
-**Remove `DATABASE_AUTH_TOKEN` and any old `DATABASE_URL=file:...` or `libsql://...`.** When present, `DATABASE_URL` takes precedence over `DB_*`. Individual `DB_*` fields avoid URL-encoding passwords. Alternatively, use `DATABASE_URL=mysql://USER:ENCODED_PASSWORD@127.0.0.1:3306/DATABASE` instead of the five `DB_*` fields; username/password must be percent-encoded.
+**Remove `DATABASE_AUTH_TOKEN` and any old `DATABASE_URL=file:...` or `libsql://...`.** When any of `DB_USER`, `DB_PASSWORD` or `DB_NAME` is set, the individual `DB_*` settings take precedence over `DATABASE_URL`. Set all three together. `DB_HOST` defaults to `127.0.0.1` and `DB_PORT` defaults to `3306`. For URL-only configuration, remove those three fields. Individual `DB_*` fields avoid URL-encoding passwords. Alternatively, use `DATABASE_URL=mysql://USER:ENCODED_PASSWORD@127.0.0.1:3306/DATABASE` instead of the five `DB_*` fields; username/password must be percent-encoded.
 
 Use the temporary Hostinger HTTPS address for `APP_URL` if the real domain is not connected yet. When connecting the domain, update `APP_URL` and redeploy. Use the exact browser origin, with no page path, query or fragment. Redirect `www` to the canonical host.
 

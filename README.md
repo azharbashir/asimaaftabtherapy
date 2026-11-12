@@ -32,6 +32,7 @@ Open http://127.0.0.1:5173. The first startup applies migrations and creates an 
 | `npm run dev` | Apply local migrations and start development on port 5173 |
 | `npm run build` | Build production output (database initialization runs at server startup) |
 | `npm start` | Apply migrations, bootstrap a first administrator if needed and serve production; respects Hostinger's `PORT` |
+| `npm run db:check` | Test MySQL connectivity and explain common configuration errors without changing data |
 | `npm run db:setup` | Apply migrations and bootstrap a first administrator |
 | `npm run db:generate` | Generate migrations after schema edits |
 | `npm run db:import` | Import local SQLite records; see deployment guide |
