@@ -42,4 +42,7 @@ const emailHex=Buffer.from(account,'utf8').toString('hex');
 console.log('\nCopy the SQL below into your live database in phpMyAdmin → SQL → Go.');
 console.log('This updates an existing admin only. Confirm phpMyAdmin reports one affected row.\n');
 console.log(`UPDATE users SET password_hash = '${hash}' WHERE email = CONVERT(0x${emailHex} USING utf8mb4) AND role = 'admin';`);
+console.log(`DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE email = CONVERT(0x${emailHex} USING utf8mb4) AND role = 'admin');`);
+console.log(`DELETE FROM login_attempts WHERE email = CONVERT(0x${emailHex} USING utf8mb4);`);
+console.log(`SELECT email, role, password_hash = '${hash}' AS password_updated FROM users WHERE email = CONVERT(0x${emailHex} USING utf8mb4);`);
 console.log('\nThen sign in using your admin email and the new password. Keep this output private.');

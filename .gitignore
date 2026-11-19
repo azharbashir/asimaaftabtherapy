@@ -54,3 +54,6 @@ yarn-error.log*
 *.sqlite-wal
 /backups/
 !.env.example
+
+# Private live setup export
+/exports/LIVE-WEBSITE-SETUP.sql

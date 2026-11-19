@@ -16,19 +16,31 @@ export function PageBanner({title,subtitle}:{title:string;subtitle?:string}){con
  <nav className="s-crumbs" aria-label="Breadcrumb"><Link href="/"><HomeIcon size={14}/> {t('Home')}</Link><ChevronRight size={14}/><span aria-current="page">{t(title)}</span></nav>
  <h1>{t(title)}</h1>{subtitle&&<p>{t(subtitle)}</p>}</div><svg className="s-curve" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden><path d="M0 60V30C240 0 480 0 720 22s480 38 720 8v30Z"/></svg></section>;}
 
-export function AboutSection(){
+export function AboutSection({full=false}:{full?:boolean}){
  const c=useContent();
- const quals=c.credentials.split(/\n|;|,(?![^()]*\))/).map(s=>s.trim()).filter(Boolean);
+ const quals=c.credentials.split(/\n|;/).map(s=>s.trim()).filter(Boolean);
  return <section id="about" className="s-about s-sec"><div className="s-wrap s-about-grid">
   <div className="s-about-art"><div className="s-about-frame"><img src={c.aboutImage||img('1544027993-37dbfe43562a',900)} alt={c.aboutImage?c.name:'Two people talking in a calm, supportive conversation'}/></div></div>
   <div className="s-about-copy">
    <Eyebrow><Copy text="Who I Am"/></Eyebrow>
    <h2><Copy text="Hi! My name is"/> {firstName(c.name)}</h2>
+   <p><strong>{c.tagline}</strong></p>
    {c.about.split(/\n+/).filter(Boolean).map((p,i)=><p key={i}>{p}</p>)}
    {c.aboutClosing&&<p>{c.aboutClosing}</p>}
-   {quals.length>0&&<><h4 className="s-quals-title"><Copy text="Qualifications & Training"/></h4><div className="s-chips">{quals.map(q=><span key={q}><CheckCircle2 size={14}/>{q}</span>)}</div></>}
-   <Link className="s-btn lg" href="/booking"><CalendarDays size={19}/> <Copy text="Book an Appointment"/></Link>
+   {full&&c.aboutFull.split(/\n+/).filter(Boolean).map((p,i)=><p key={i}>{p}</p>)}
+   {full&&quals.length>0&&<><h4 className="s-quals-title"><Copy text="Qualifications & Professional Credentials"/></h4><div className="s-chips">{quals.map(q=><span key={q}><CheckCircle2 size={14}/>{q}</span>)}</div></>}
+   <Link className="s-btn lg" href={full?"/booking":"/about"}>{full?<><CalendarDays size={19}/> <Copy text="Book an Appointment"/></>:<Copy text="Learn About Me"/>}</Link>
   </div>
+ </div></section>;
+}
+
+export function TherapeuticProfile(){
+ const c=useContent();
+ return <section className="s-sec s-profile"><div className="s-wrap">
+  <div className="s-profile-grid">
+   {[{title:'Therapeutic Approaches',items:c.approaches},{title:'Additional Areas of Expertise',items:c.specialisms}].map(group=><div className="s-profile-panel" key={group.title}><h2>{group.title}</h2><ul>{group.items.map(item=><li key={item.title}><CheckCircle2 size={18} aria-hidden/><div><strong>{item.title}</strong>{item.text&&<p>{item.text}</p>}</div></li>)}</ul></div>)}
+  </div>
+  <div className="s-philosophy"><Eyebrow>My Therapeutic Philosophy</Eyebrow><h2>Understanding you. Supporting your growth.</h2>{c.philosophy.split(/\n+/).filter(Boolean).map((p,i)=><p key={i}>{p}</p>)}<p className="s-profile-invitation">{c.bookingIntro}</p><Link className="s-btn lg" href="/booking"><Copy text="Book a Session"/></Link></div>
  </div></section>;
 }
 

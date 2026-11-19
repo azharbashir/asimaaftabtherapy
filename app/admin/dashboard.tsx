@@ -150,8 +150,11 @@ export default function Dashboard({role}:{role:'admin'|'manager'}){
    <div className="admin-panel"><h3>About section (“Hi! My name is …”)</h3>
     <Field label="About you" rows={6} value={c.about} onChange={v=>set({about:v})} hint="Separate paragraphs with a new line."/>
     <Field label="Closing paragraph" rows={3} value={c.aboutClosing} onChange={v=>set({aboutClosing:v})}/>
+    <Field label="Full profile (About page)" rows={6} value={c.aboutFull} onChange={v=>set({aboutFull:v})}/>
+    <Field label="Therapeutic philosophy" rows={6} value={c.philosophy} onChange={v=>set({philosophy:v})}/>
     <ImageField label="About image" value={c.aboutImage} onChange={v=>set({aboutImage:v})} hint="Optional. A photo of you works best here."/>
    </div>
+   {(["approaches","specialisms"] as const).map(key=><ListEditor key={key} title={key==="approaches"?"Therapeutic approaches":"Additional areas of expertise"} items={c[key]} onChange={v=>set({[key]:v})} blank={{title:"",text:""}} addLabel="Add item" render={(item,u)=><><Field label="Title" value={item.title} onChange={v=>u({title:v})}/><Field label="Description (optional)" rows={2} value={item.text} onChange={v=>u({text:v})}/></>}/>)}
    <ListEditor title="Highlights strip" intro="The green band with large words, e.g. “Confidential — Safe & private”. Up to four look best. Only use figures that are accurate." items={c.stats} onChange={v=>set({stats:v})} blank={{value:'',label:''}} addLabel="Add highlight" render={(s,u)=><div className="form-row"><Field label="Large text" value={s.value} onChange={v=>u({value:v})}/><Field label="Small label" value={s.label} onChange={v=>u({label:v})}/></div>}/>
    <div className="admin-panel"><h3>Booking &amp; contact section</h3>
     <Field label="Introduction" rows={3} value={c.bookingIntro} onChange={v=>set({bookingIntro:v})}/>

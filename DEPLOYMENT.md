@@ -72,6 +72,14 @@ After initialization, you can remove `ADMIN_PASSWORD` from the hosting environme
 
 ## 6. Transfer previous local SQLite data (optional)
 
+### Transfer website content from a local MySQL database
+
+Start the existing local MySQL server and run `npm run db:export-site` in the app directory. The command reads the local `.env.local` connection and writes a private `.data/live-site-data.sql` file containing saved content, images and reviews. It does not copy accounts, sessions or appointments. Reviews retain their moderation status; only approved reviews appear publicly.
+
+Back up the destination database, then use phpMyAdmin **Import** in the live database matching the app's `DB_NAME`. Import `.data/live-site-data.sql` after the schema has been initialized. Existing destination rows are preserved, including content with the same ID. Schema-only files under `exports/` do not contain local website data. Keep data exports private and out of Git.
+
+For an existing administrator's password recovery without a remote connection, run `npm run admin:sql` locally, enter the email and a new private password, then run all generated SQL statements in the intended live database. Check the final result reports `password_updated = 1`. This also revokes old sessions and clears login lockouts.
+
 GitHub transfers code, not saved content or images. Your existing `.data/app.db` is preserved locally. Deploy first so the production admin and schema exist. Back up your MySQL database before importing.
 
 On your computer, install dependencies with `npm ci --include=dev`. Configure the destination MySQL connection in a private `.env.local` (or process environment). For remote access from your computer, allow your IP in Hostinger's **Remote MySQL** section and use the remote MySQL hostname shown there, rather than `127.0.0.1`. See [Hostinger remote access](https://www.hostinger.com/support/1583546-how-to-set-up-remote-mysql-access-in-hostinger/).

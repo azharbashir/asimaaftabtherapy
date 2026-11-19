@@ -1,3 +1,4 @@
+import clientProfile from './client-profile.json';
 import {copyDefaults} from './copy-defaults';
 export type Testimonial = {quote:string;name:string;location:string};
 export type PhoneNumber = {label:string;number:string;whatsapp:boolean};
@@ -10,20 +11,16 @@ export type Article = {title:string;category:string;body:string;image:string;dat
 export const defaults = {
  copy: {...copyDefaults},
  // Practice details
- logoImage: '', brandTagline: '',
- name: 'Asima Aftab', tagline: 'Psychotherapist & Counsellor', email: '', credentials: '', fee: '',
+ logoImage: '', name: 'Asima Aftab', email: '', fee: '',
  phones: [] as PhoneNumber[],
  socials: {facebook:'',instagram:'',linkedin:''} as Socials,
  // Home hero
- heroBadge: 'Psychotherapist & Counsellor', headline: 'You Don’t Have to\nFace It Alone.', intro: 'A compassionate space to pause, be heard, and explore what matters to you. Take your next step towards a more grounded, fulfilling life.', heroImage: '',
+ heroImage: '',
  // About
- about: 'Hello, I’m Asima. I believe that having space to talk openly can be the beginning of meaningful change. My aim is to offer a warm, thoughtful environment where you can explore your experiences at your own pace.',
- aboutClosing: 'Whether you’re dealing with anxiety, low mood, stress, relationship difficulties, or simply seeking personal growth — my goal is to support you with care and practical tools to improve your wellbeing.',
  aboutImage: '',
  // Highlights strip
  stats: [{value:'Confidential',label:'Safe & private'},{value:'Online',label:'Sessions anywhere'},{value:'Flexible',label:'At your own pace'},{value:'Caring',label:'Non-judgemental space'}] as Stat[],
  // Booking / contact
- bookingIntro: 'Please contact me to book an online appointment or to learn more. You don’t need the perfect words — just a willingness to take the first step.',
  quote: 'Growth occurs when individuals confront problems, struggle to master them, and through that struggle develop new aspects of their skills, capacities, and views about life.', quoteAuthor: 'Carl Jung',
  sessions: [
   {title:'Individual Session',subtitle:'50 minutes, one-to-one',price:'Flexible fees',features:'One-to-one online session\nFlexible appointment times\nConfidential & professional\nSecure video call'},
@@ -46,7 +43,8 @@ export const defaults = {
  {title:'Trauma & difficult experiences',text:'A sensitive space to discuss difficult experiences at a pace that feels right for you.',image:'',icon:'flower'}].map(s=>({...s,badge:'Online therapy',duration:'',price:''})),
  articles: [{title:'What to expect from your first therapy session',category:'STARTING THERAPY',image:'',date:'',body:'Your first conversation is a chance to ask questions and talk about what brings you to therapy. You can share at your own pace. Discuss confidentiality, availability, and fees before deciding whether to continue.'},{title:'Making room for yourself in a busy world',category:'EVERYDAY WELLBEING',image:'',date:'',body:'Notice what takes your energy and what helps you feel restored. A quiet walk, a pause between tasks, or a clear boundary can create a little breathing space. Your needs deserve attention too.'}] as Article[],
  faqs:[{q:'How do I book an appointment?',a:'Complete the appointment request below. Your preferred date is a request, and your session is only confirmed after you receive a personal response.'},{q:'Where do sessions take place?',a:'You can request an online session. The meeting platform and joining details will be agreed when your appointment is confirmed.'},{q:'How much does a session cost?',a:'Fees and session duration will be discussed before you book. There is no payment collected through this website.'},{q:'Do I need to know what to talk about?',a:'You do not need to have everything worked out. Your first conversation is an opportunity to explore what you would like support with.'}],
- testimonials: [] as Testimonial[]
+ testimonials: [] as Testimonial[],
+ ...clientProfile
 };
 export type SiteContent = typeof defaults;
 

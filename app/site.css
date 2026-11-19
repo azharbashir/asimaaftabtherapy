@@ -681,3 +681,21 @@
 .s-testimonials-link{display:flex;justify-content:center;margin-top:34px}
 .site .s-testimonial-status{color:#ffffffc7;text-align:center;font-size:14px;max-width:600px;margin:15px auto 0;line-height:1.8}
 @media(max-width:480px){.s-tcard figcaption{flex-wrap:wrap}.s-tcard figcaption .s-stars{margin-left:0;width:100%;padding-left:54px}}
+
+/* Professional profile */
+.s-profile{background:var(--mint)}
+.s-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.s-profile-panel{background:#fff;border-radius:20px;padding:clamp(24px,4vw,40px)}
+.site .s-profile-panel h2{font-size:clamp(24px,3vw,32px);margin:0 0 24px}
+.s-profile-panel ul{list-style:none;padding:0;margin:0;display:grid;gap:18px}
+.s-profile-panel li{display:flex;align-items:flex-start;gap:12px;font-size:16px}
+.s-profile-panel li svg{flex-shrink:0;margin-top:4px;color:var(--green)}
+.s-profile-panel strong{font-weight:500}
+.s-profile-panel li p{margin:6px 0 0}
+.s-philosophy{max-width:800px;margin:72px auto 0;text-align:center}
+.site .s-philosophy h2{font-size:clamp(28px,4vw,40px)}
+.s-philosophy p{font-size:17px;line-height:1.8}
+.s-profile-invitation{font-weight:500;margin-top:28px}
+.s-about .s-chips span{font-size:14px;align-items:flex-start;border-radius:12px}
+.s-about .s-chips svg{flex-shrink:0;margin-top:3px}
+@media(max-width:700px){.s-profile-grid{grid-template-columns:1fr}.s-philosophy{margin-top:48px}}

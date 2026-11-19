@@ -23,7 +23,8 @@
     "mail:verify": "node scripts/verify-mail.mjs",
     "test:mail": "node scripts/mail-smoke.mjs",
     "db:check": "node scripts/check-database.mjs",
-    "admin:sql": "node scripts/admin-password-sql.mjs"
+    "admin:sql": "node scripts/admin-password-sql.mjs",
+    "db:export-site": "node scripts/export-site-data.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
