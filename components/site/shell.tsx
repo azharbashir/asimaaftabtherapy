@@ -31,7 +31,7 @@ export function Shell({children}:{children:React.ReactNode}){const t=useCopy();
   <footer className="s-footer"><div className="s-wrap">
    <div className="s-foot-grid">
     <div><Brand name={c.name} tagline={t("Psychotherapy & Counselling")} logoImage={c.logoImage} light/><p>{c.footerText}</p>{c.brandTagline&&<p>{c.brandTagline}</p>}<SocialLinks socials={c.socials} className="s-social lg"/></div>
-    <div><h4><Copy text="Quick Links"/></h4>{nav.map(([h,l])=><Link key={h} href={h}><ChevronRight size={13}/>{t(l)}</Link>)}<Link href="/booking"><ChevronRight size={13}/><Copy text="Book a Session"/></Link></div>
+    <div><h4><Copy text="Quick Links"/></h4>{nav.filter(([href])=>href!=='/'&&href!=='/online-therapy').map(([h,l])=><Link key={h} href={h}><ChevronRight size={13}/>{t(l)}</Link>)}<Link href="/booking"><ChevronRight size={13}/><Copy text="Book a Session"/></Link></div>
     <div><h4><Copy text="Contact"/></h4>
      {c.email&&<a href={'mailto:'+c.email}><Mail size={14}/> {c.email}</a>}
      {phones.map((p,i)=><div key={i} className="s-foot-phone">{p.label&&<small>{p.label}</small>}<a {...linkProps(p)}>{p.whatsapp?<WhatsAppIcon size={14}/>:<Phone size={14}/>} {p.number}</a></div>)}
